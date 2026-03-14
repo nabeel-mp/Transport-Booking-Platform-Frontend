@@ -69,6 +69,7 @@ export default function Navbar() {
                   alt="TRIPneO Logo" 
                   width={isScrolled ? 32 : 46} 
                   height={isScrolled ? 32 : 46} 
+                  priority
                   className="object-contain drop-shadow-md transition-all duration-300"
                 />
               </motion.div>

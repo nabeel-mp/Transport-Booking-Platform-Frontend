@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { User, Mail, Lock, Loader2, X } from 'lucide-react';
@@ -8,6 +9,7 @@ import { api } from '@/lib/axios';
 import { useAuthStore } from '@/lib/store';
 
 export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
+  const router = useRouter();
   const [view, setView] = useState(initialView);
   const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -19,6 +21,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm();
 
+  // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'unset';
@@ -34,9 +37,12 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
         setAuth(user, token, refresh_token);
         onClose(); 
       } else {
+        // Registration Flow
         await api.post('/auth/register', data);
-        setView('login'); 
+        onClose(); 
         reset(); 
+        // Redirect directly to the beautiful OTP verification page
+        router.push(`/verify?email=${encodeURIComponent(data.email)}`); 
       }
     } catch (err) {
       setError(err.response?.data?.message || `Failed to ${view}. Please try again.`);
@@ -59,7 +65,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
           >
             {/* Modal Content */}
             <motion.div
@@ -68,30 +74,31 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
               onClick={(e) => e.stopPropagation()}
-              className="max-w-md w-full bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] overflow-hidden border border-slate-100 relative"
+              className="max-w-[420px] w-full bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden border border-white/20 relative"
             >
               {/* Close Button */}
               <button 
                 onClick={handleClose}
-                className="absolute top-5 right-5 z-10 p-2 bg-white/50 backdrop-blur-sm text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all shadow-sm"
+                className="absolute top-5 right-5 z-20 p-2 bg-white/50 backdrop-blur-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all shadow-sm"
               >
                 <X size={20} />
               </button>
 
-              {/* Decorative Header Top */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white opacity-80" />
+              {/* Decorative Header Gradient */}
+              <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white opacity-90 z-0" />
 
-              <div className="relative px-8 pt-10 pb-8">
+              <div className="relative px-8 pt-10 pb-8 z-10">
                 
                 {/* Brand & Greeting */}
                 <div className="flex flex-col items-center mb-8">
-                  <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-emerald-100 flex items-center justify-center mb-4 p-1.5">
-                    <Image src="/main.png" alt="Logo" width={32} height={32} className="object-contain" />
+                  <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-emerald-100 flex items-center justify-center mb-4 p-2 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Image src="/main.png" alt="Logo" width={36} height={36} className="object-contain relative z-10" />
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">
                     {view === 'login' ? 'Welcome back' : 'Join TRIPneO'}
                   </h2>
-                  <p className="text-slate-500 text-sm mt-1">
+                  <p className="text-slate-500 text-sm mt-1 text-center px-4">
                     {view === 'login' ? 'Enter your details to access your account.' : 'Start your smart travel journey today.'}
                   </p>
                 </div>
@@ -103,7 +110,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                       key={tab}
                       type="button"
                       onClick={() => { setView(tab); reset(); setError(''); }}
-                      className={`relative flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors z-10 ${view === tab ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}
+                      className={`relative flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors z-10 capitalize tracking-wide ${view === tab ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       {view === tab && (
                         <motion.div
@@ -146,11 +153,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                           <input 
                             type="text" 
                             {...register('name', { required: view === 'register' ? 'Name is required' : false })}
-                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
                             placeholder="Full Name" 
                           />
                         </div>
-                        {errors.name && <span className="text-xs font-medium text-red-500 mt-1.5 pl-2 block">{errors.name.message}</span>}
+                        {errors.name && <span className="text-xs font-bold text-red-500 mt-1.5 pl-2 block">{errors.name.message}</span>}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -164,11 +171,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                       <input 
                         type="email" 
                         {...register('email', { required: 'Email is required' })}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
                         placeholder="Email Address" 
                       />
                     </div>
-                    {errors.email && <span className="text-xs font-medium text-red-500 mt-1.5 pl-2 block">{errors.email.message}</span>}
+                    {errors.email && <span className="text-xs font-bold text-red-500 mt-1.5 pl-2 block">{errors.email.message}</span>}
                   </div>
 
                   {/* Password Field */}
@@ -180,11 +187,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                       <input 
                         type="password" 
                         {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 font-medium focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all" 
                         placeholder="Password" 
                       />
                     </div>
-                    {errors.password && <span className="text-xs font-medium text-red-500 mt-1.5 pl-2 block">{errors.password.message}</span>}
+                    {errors.password && <span className="text-xs font-bold text-red-500 mt-1.5 pl-2 block">{errors.password.message}</span>}
                   </div>
 
                   {/* Forgot Password Link */}
@@ -194,7 +201,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                         className="flex justify-end pt-1"
                       >
-                        <a href="#" className="text-sm font-semibold text-emerald-600 hover:text-emerald-500 transition-colors">
+                        <a href="#" className="text-sm font-bold text-emerald-600 hover:text-emerald-500 transition-colors">
                           Forgot password?
                         </a>
                       </motion.div>
@@ -207,9 +214,9 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                     whileTap={{ scale: 0.98 }}
                     disabled={isSubmitting}
                     type="submit" 
-                    className="w-full flex justify-center items-center bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-70 text-white font-bold py-3.5 px-4 rounded-2xl shadow-[0_8px_20px_-6px_rgba(16,185,129,0.4)] transition-all mt-6"
+                    className="w-full flex justify-center items-center bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:from-emerald-300 disabled:to-emerald-300 disabled:shadow-none text-white font-bold text-lg py-3.5 px-4 rounded-2xl shadow-[0_8px_20px_-6px_rgba(16,185,129,0.4)] transition-all mt-6"
                   >
-                    {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : (view === 'login' ? 'Sign In' : 'Create Account')}
+                    {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : (view === 'login' ? 'Sign In' : 'Create Account')}
                   </motion.button>
                 </form>
 
@@ -218,7 +225,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-3 bg-white text-slate-400 font-medium">Or continue with</span>
+                      <span className="px-4 bg-white text-slate-400 font-semibold text-xs tracking-widest uppercase">Or continue with</span>
                     </div>
                   </div>
                   <motion.button 
@@ -228,7 +235,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                     type="button"
                     className="mt-6 w-full flex justify-center items-center gap-3 bg-white border-2 border-slate-100 text-slate-700 font-bold py-3.5 px-4 rounded-2xl hover:bg-slate-50 hover:border-slate-200 transition-all shadow-sm"
                   >
-                    <img src="/google.svg" alt="Google" className="h-4 w-5" />
+                    <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={20} height={20} />
                     Continue with Google
                   </motion.button>
                 </div>
