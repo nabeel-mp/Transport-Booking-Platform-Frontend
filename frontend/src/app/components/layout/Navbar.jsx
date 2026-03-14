@@ -18,7 +18,7 @@ export default function Navbar() {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, view: 'login' });
   const [isScrolled, setIsScrolled] = useState(false);
   
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const openLogin = () => setModalConfig({ isOpen: true, view: 'login' });
   const openRegister = () => setModalConfig({ isOpen: true, view: 'register' });
@@ -41,6 +41,16 @@ export default function Navbar() {
     { name: 'Flights', href: '/flight', icon: Plane },
     { name: 'Taxis', href: '/taxi', icon: Car },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout'); // Clears the HttpOnly cookie in the browser
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      logout(); // Clears Zustand state and UI
+    }
+  };
 
   return (
     <>
@@ -134,7 +144,7 @@ export default function Navbar() {
                   <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={logout}
+                    onClick={handleLogout}
                     className={`flex items-center justify-center bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-200 hover:border-red-200 rounded-full transition-all shadow-sm
                       ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}
                     `}

@@ -32,23 +32,36 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     setError('');
     try {
       if (view === 'login') {
-        const response = await api.post('/auth/login', { email: data.email, password: data.password });
-        const { token, refresh_token, user } = response.data;
-        setAuth(user, token, refresh_token);
+        // Calls POST http://localhost:8080/api/auth/login
+        const response = await api.post('/auth/login', { 
+          email: data.email, 
+          password: data.password 
+        });
+        
+        // Go backend sets the HttpOnly cookie. We just set the UI state.
+        // We use the email prefix as a display name since your Go backend currently only returns a message & token.
+        const displayName = data.email.split('@')[0];
+        setAuth({ email: data.email, name: displayName }); 
+        
         onClose(); 
       } else {
-        // Registration Flow
-        await api.post('/auth/register', data);
+        // Calls POST http://localhost:8080/api/auth/register
+        await api.post('/auth/register', {
+          email: data.email,
+          password: data.password
+        });
         onClose(); 
         reset(); 
-        // Redirect directly to the beautiful OTP verification page
+        
+        // Push to verify page with their email
         router.push(`/verify?email=${encodeURIComponent(data.email)}`); 
       }
     } catch (err) {
-      setError(err.response?.data?.message || `Failed to ${view}. Please try again.`);
+      // Handles the Go backend's custom fiber.Map errors
+      const backendError = err.response?.data?.error || err.response?.data?.message;
+      setError(backendError || `Failed to ${view}. Please try again.`);
     }
   };
-
   const handleClose = () => {
     reset();
     setError('');

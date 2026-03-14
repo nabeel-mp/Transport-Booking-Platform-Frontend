@@ -3,34 +3,23 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
-      token: null,
-      refreshToken: null,
       isAuthenticated: false,
 
-      // Actions
-      setAuth: (user, token, refreshToken) => set({
+      // We only save the user info. The token is safe in the browser's cookies!
+      setAuth: (user) => set({
         user,
-        token,
-        refreshToken,
-        isAuthenticated: !!token,
-      }),
-
-      updateToken: (newToken) => set({
-        token: newToken,
-        isAuthenticated: !!newToken,
+        isAuthenticated: true,
       }),
 
       logout: () => set({
         user: null,
-        token: null,
-        refreshToken: null,
         isAuthenticated: false,
       }),
     }),
     {
-      name: 'tripneo-auth', // name of the item in localStorage
+      name: 'tripneo-auth', 
       storage: createJSONStorage(() => localStorage), 
     }
   )
